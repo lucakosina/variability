@@ -22,12 +22,12 @@ from joblib import Parallel, delayed
 import os
 
 
-class WM_lss_variability_analysis:
+class lss_variability_analysis:
 
     def __init__(self):
         pass    
 
-    def load_data_PREACT(self, folder, subID):
+    def load_data(self, folder, subID, task, run=None):
         sub_folder = "sub-FOR" + subID + "/"
 
         # check if folder is empty
@@ -36,107 +36,168 @@ class WM_lss_variability_analysis:
             #warnings.warn(f"The folder is empty: {folder_path}")
             raise FileNotFoundError(f"No files found in the folder: {folder_path}")
         
-        events_pic_neg1 = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_pic_neg_1.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
-        events_pic_neg6 = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_pic_neg_6.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
-        events_pic_neut1 = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_pic_neut_1.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
-        events_pic_neut6 = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_pic_neut_6.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
-        events_stim = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_stim.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
-        events_probe = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_probe.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
-        events_resp = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_resp.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+        if task == "WM": 
+            events_pic_neg1 = pd.read_csv(folder + "task_regressors/" + task + "/FOR"+ subID + "_" + task + "_pic_neg_1.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+            events_pic_neg6 = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_pic_neg_6.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+            events_pic_neut1 = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_pic_neut_1.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+            events_pic_neut6 = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_pic_neut_6.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+            events_stim = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_stim.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+            events_probe = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_probe.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+            events_resp = pd.read_csv(folder + "task_regressors/WM/FOR"+ subID + "_WM_resp.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
 
-        # get blocks 
-        events_pic_neg1["trial_type"] = [f'neg1_{i+1}' for i in range(len(events_pic_neg1))]
-        events_pic_neg6["trial_type"] = [f'neg6_{i+1}' for i in range(len(events_pic_neg6))]
-        events_pic_neut1["trial_type"] = [f'neut1_{i+1}' for i in range(len(events_pic_neut1))]
-        events_pic_neut6["trial_type"] = [f'neut6_{i+1}' for i in range(len(events_pic_neut6))]
-        events_stim["trial_type"] = [f'stim_{i+1}' for i in range(len(events_stim))]
-        events_probe["trial_type"] = [f'probe_{i+1}' for i in range(len(events_probe))]
-        events_resp["trial_type"] = [f'resp_{i+1}' for i in range(len(events_resp))]
+            # get blocks 
+            events_pic_neg1["trial_type"] = [f'neg1_{i+1}' for i in range(len(events_pic_neg1))]
+            events_pic_neg6["trial_type"] = [f'neg6_{i+1}' for i in range(len(events_pic_neg6))]
+            events_pic_neut1["trial_type"] = [f'neut1_{i+1}' for i in range(len(events_pic_neut1))]
+            events_pic_neut6["trial_type"] = [f'neut6_{i+1}' for i in range(len(events_pic_neut6))]
+            events_stim["trial_type"] = [f'stim_{i+1}' for i in range(len(events_stim))]
+            events_probe["trial_type"] = [f'probe_{i+1}' for i in range(len(events_probe))]
+            events_resp["trial_type"] = [f'resp_{i+1}' for i in range(len(events_resp))]
 
-        events = pd.concat([events_pic_neut1, events_pic_neg1, events_pic_neg6, events_pic_neut6, events_stim, events_probe, events_resp], ignore_index=False)
-        events = events.sort_values(by="onset").reset_index(drop=True)
+            events = pd.concat([events_pic_neut1, events_pic_neg1, events_pic_neg6, events_pic_neut6, events_stim, events_probe, events_resp], ignore_index=False)
+            events = events.sort_values(by="onset").reset_index(drop=True)
 
-        # cut distorted end trials
-        #events = events.iloc[:-6]
+            # cut distorted end trials
+            #events = events.iloc[:-6]
 
-        end_thres = 20
-        # cut out trials in the last 20s of the run
-        run_duration = events["onset"].max() + events["duration"].max()
-        events = events[events["onset"] + events["duration"] <= run_duration - end_thres].reset_index(drop=True)
+            end_thres = 20
+            # cut out trials in the last 20s of the run
+            run_duration = events["onset"].max() + events["duration"].max()
+            events = events[events["onset"] + events["duration"] <= run_duration - end_thres].reset_index(drop=True)
 
-        fmri_img = nib.load(folder_path + "sub-FOR" + subID + "_task-wm_setting-preproc_bold.nii.gz")
-        fmri_data = fmri_img.get_fdata()  
-        # smooth image
-        fmri_img = nilearn.image.smooth_img(fmri_img, fwhm=6)
+            fmri_img = nib.load(folder_path + "sub-FOR" + subID + "_task-" + task + "_setting-preproc_bold.nii.gz")
+            fmri_data = fmri_img.get_fdata()  
+            # smooth image
+            fmri_img = nilearn.image.smooth_img(fmri_img, fwhm=6)
 
 
-        #motion_confounds = pd.read_csv(folder_path + "sub-FOR"+ subID + "_task-WM_setting-preproc_six_motion_reg.txt", sep='\t', header=None)
-        motion_confounds = pd.read_csv(folder_path + 
-            "sub-FOR"+ subID + "_task-WM_setting-preproc_six_motion_reg.txt",
-            delim_whitespace=True,   
-            header=None,            
-            names=[
-                "trans_x", "trans_y", "trans_z",
-                "rot_x", "rot_y", "rot_z"
-            ]
-        )
+            motion_confounds = pd.read_csv(folder_path + 
+                "sub-FOR"+ subID + "_task-" + task +"_setting-preproc_six_motion_reg.txt",
+                delim_whitespace=True,   
+                header=None,            
+                names=[
+                    "trans_x", "trans_y", "trans_z",
+                    "rot_x", "rot_y", "rot_z"
+                ]
+            )
+
+        elif task == "REG":
+            events_inst = pd.read_csv(folder + "task_regressors/" + task + "/FOR" + subID + "_" + task + "_run-" + run + "_instr.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+            events_pic_dist_neg = pd.read_csv(folder + "task_regressors/" + task + "/FOR"+ subID + "_" + task + "_run-" + run +"_pic-dist-neg.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+            events_pic_dist_neut = pd.read_csv(folder + "task_regressors/" + task + "/FOR"+ subID + "_" + task + "_run-" + run + "_pic-dist-neut.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+            events_pic_permit_neg = pd.read_csv(folder + "task_regressors/" + task + "/FOR"+ subID + "_" + task + "_run-" + run + "_pic-permit-neg.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+            events_pic_permit_neut = pd.read_csv(folder + "task_regressors/" + task + "/FOR"+ subID + "_" + task + "_run-" + run + "_pic-permit-neut.txt", sep=r'\s+', header=None, names=["onset", "duration", "?"])
+
+            # get blocks 
+            events_inst["trial_type"] = [f'inst_{i+1}' for i in range(len(events_inst))]
+            events_pic_dist_neg["trial_type"] = [f'dist_neg_{i+1}' for i in range(len(events_pic_dist_neg))]
+            events_pic_dist_neut["trial_type"] = [f'dist_neut_{i+1}' for i in range(len(events_pic_dist_neut))]
+            events_pic_permit_neg["trial_type"] = [f'permit_neg_{i+1}' for i in range(len(events_pic_permit_neg))]
+            events_pic_permit_neut["trial_type"] = [f'permit_neut_{i+1}' for i in range(len(events_pic_permit_neut))]
+
+            events = pd.concat([events_inst, events_pic_dist_neg, events_pic_dist_neut, events_pic_permit_neg, events_pic_permit_neut], ignore_index=False)
+            events = events.sort_values(by="onset").reset_index(drop=True)
+
+            # cut distorted end trials
+            #events = events.iloc[:-6]
+
+            end_thres = 20
+            # cut out trials in the last 20s of the run
+            run_duration = events["onset"].max() + events["duration"].max()
+            events = events[events["onset"] + events["duration"] <= run_duration - end_thres].reset_index(drop=True)
+
+            fmri_img = nib.load(folder_path + "sub-FOR" + subID + "_task-"+ task + "_run-" + run + "_setting-preproc_bold.nii.gz")
+            fmri_data = fmri_img.get_fdata()  
+            # smooth image
+            fmri_img = nilearn.image.smooth_img(fmri_img, fwhm=6)
+
+            motion_confounds = pd.read_csv(folder_path + 
+                "sub-FOR"+ subID + "_task-" + task + "_run-" + run + "_setting-preproc_six_motion_reg.txt",
+                delim_whitespace=True,   
+                header=None,            
+                names=[
+                    "trans_x", "trans_y", "trans_z",
+                    "rot_x", "rot_y", "rot_z"
+                ]
+            )
 
         return fmri_img, events, motion_confounds
     
-    def get_beta_maps_lss(self, fmri_img, events, confounds):
-        """
-        Calculate beta maps for each trial using the Least Squares - Single (LSS) method.
-        This models each trial separately while collapsing all other trials into a single regressor.
-        
-        Parameters:
-        fmri_img (nib.Nifti1Image): The preprocessed fMRI data.
-        events (pd.DataFrame): DataFrame containing event information with columns ['onset', 'duration', 'trial_type'].
-        confounds (pd.DataFrame): DataFrame containing confound regressors (e.g., motion parameters).
-        
-        Returns:
-        beta_maps (list of nib.Nifti1Image): List of beta maps for each trial.
-        beta_sd_map (nib.Nifti1Image): Voxelwise standard deviation map across all beta maps.
-        
-        """
+    def get_beta_maps_lss(self, task, fmri_img, events, confounds):
         t_r = 0.72
         n_scans = fmri_img.shape[-1]
+        frame_times = np.arange(n_scans) * t_r
 
         beta_maps = []
 
         # iterate over each actual trial in the events DataFrame
         for i, trial in events.iterrows():
-            if trial['trial_type'].startswith('neg') or trial['trial_type'].startswith('neut'):
-                
-                # get trial to model
-                this_trial = trial.to_frame().T.copy()
-                this_trial["trial_type"] = f"trial_{i+1}"
+            if task == "WM":
+                if trial['trial_type'].startswith('neg') or trial['trial_type'].startswith('neut'):
+                    
+                    this_trial = trial.to_frame().T.copy()
+                    this_trial["trial_type"] = f"trial_{i+1}"
 
-                # collapse all other regressors into "other"
-                others = events.drop(i).copy()
-                others["trial_type"] = "other"
+                    # collapse all others into "other"
+                    others = events.drop(i).copy()
+                    others["trial_type"] = "other"
 
-                trial_events_df = pd.concat([this_trial, others], ignore_index=True)
+                    # combine
+                    trial_events_df = pd.concat([this_trial, others], ignore_index=True)
 
-                first_level_model = FirstLevelModel(
-                    t_r=t_r,
-                    slice_time_ref=0.5,
-                    hrf_model="spm",
-                    drift_model="cosine",
-                    high_pass=0.01
-                )
-                
-                first_level_model = first_level_model.fit(
-                    fmri_img,
-                    events=trial_events_df,
-                    confounds=confounds
-                )
+                    first_level_model = FirstLevelModel(
+                        t_r=t_r,
+                        slice_time_ref=0.5,
+                        hrf_model="spm",
+                        drift_model="cosine",
+                        high_pass=0.01
+                    )
+                    
+                    first_level_model = first_level_model.fit(
+                        fmri_img,
+                        events=trial_events_df,
+                        confounds=confounds
+                    )
 
-                design_matrix = first_level_model.design_matrices_[0]
-                design_columns = design_matrix.columns
+                    design_matrix = first_level_model.design_matrices_[0]
+                    design_columns = design_matrix.columns
 
-                # extract beta for this trial only
-                eff_map = first_level_model.compute_contrast(f"trial_{i+1}", output_type="effect_size")
-                beta_maps.append(eff_map)
+                    # extract beta for this trial only
+                    eff_map = first_level_model.compute_contrast(f"trial_{i+1}", output_type="effect_size")
+                    beta_maps.append(eff_map)
+            elif task == "REG":
+                if trial['trial_type'].startswith('dist') or trial['trial_type'].startswith('permit'):
+                    
+                    this_trial = trial.to_frame().T.copy()
+                    this_trial["trial_type"] = f"trial_{i+1}"
+
+                    # collapse all others into "other"
+                    others = events.drop(i).copy()
+                    others["trial_type"] = "other"
+
+                    # combine
+                    trial_events_df = pd.concat([this_trial, others], ignore_index=True)
+
+                    first_level_model = FirstLevelModel(
+                        t_r=t_r,
+                        slice_time_ref=0.5,
+                        hrf_model="spm",
+                        drift_model="cosine",
+                        high_pass=0.01
+                    )
+                    
+                    first_level_model = first_level_model.fit(
+                        fmri_img,
+                        events=trial_events_df,
+                        confounds=confounds
+                    )
+
+                    design_matrix = first_level_model.design_matrices_[0]
+                    design_columns = design_matrix.columns
+
+                    # extract beta for this trial only
+                    eff_map = first_level_model.compute_contrast(f"trial_{i+1}", output_type="effect_size")
+                    beta_maps.append(eff_map)
 
         # stack into 4D image and compute voxelwise SD
         beta_4d = concat_imgs(beta_maps)
@@ -145,7 +206,7 @@ class WM_lss_variability_analysis:
         return beta_maps, beta_sd_map
 
 
-    def apply_ROI_masks_new(self, img, atlas, region_names, plot = True):
+    def apply_ROI_masks(self, img, atlas, region_names, plot = True):
         """
         Apply ROI masks from the given atlas to the input image and extract mean values for specified regions.
 
@@ -230,8 +291,6 @@ class WM_lss_variability_analysis:
         return matrix_df
 
 
-
-
 ### Main script
 
 
@@ -241,9 +300,8 @@ results_folder_PREACT = "/Users/lucakosina/Library/Mobile Documents/com~apple~Cl
 
 subIDs = ["14080"]
 
-var = WM_lss_variability_analysis()
+var = lss_variability_analysis()
 
-# run for all subjects and save the beta maps
 
 atlas = fetch_atlas_schaefer_2018(n_rois=100, yeo_networks=7, resolution_mm=1, verbose=1)
 
@@ -258,42 +316,63 @@ regions_schaefer = atlas.labels[1:]
 regions_sub = ["Amygdala", "Hippocampus", "Putamen", "Thalamus", "Accumbens"]
 
 
-def process_subject(subID, folder, results_folder, atlas, atlas_sub, regions_schaefer, regions_sub):
+
+def process_subject(subID, folder, task, results_folder, atlas, atlas_sub, regions_schaefer, regions_sub):
     try:
         print(f"Processing subject {subID}...")
 
         # check if folder already contains file then skip
         folder_path = os.path.expanduser(results_folder + subID + "/")
-        file_name = f"lss_ROI_variability_{subID}.csv"
+        file_name = f"{task}_lss_ROI_variability_{subID}_15_10_25.csv"
         file_path = os.path.join(folder_path, file_name)
 
         if os.path.exists(file_path):
             print("Subject already processed, skipping...")
             return None
-        
         else:
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
 
-            fmri_img, events, confounds = var.load_data_PREACT(folder, subID)
-            betas, beta_sd_maps = var.get_beta_maps_lss(fmri_img, events, confounds)
+            if task == "REG":
+                fmri_img1, events, confounds = var.load_data(folder, subID, task, run="01")
+                betas1, beta_maps1 = var.get_beta_maps_lss(task, fmri_img1, events, confounds)
+                fmri_img2, events2, confounds2 = var.load_data(folder, subID, task, run="02")
+                betas2, beta_maps2 = var.get_beta_maps_lss(task, fmri_img2, events2, confounds2)
+                fmri_img3, events3, confounds3 = var.load_data(folder, subID, task, run="03")
+                betas3, beta_maps3 = var.get_beta_maps_lss(task, fmri_img3, events3, confounds3)
+                fmri_img4, events4, confounds4 = var.load_data(folder, subID, task, run="04")
+                betas4, beta_maps4 = var.get_beta_maps_lss(task, fmri_img4, events4, confounds4)
 
-            plotting.plot_glass_brain(beta_sd_maps, colorbar=True, title="LSS Variability Map - WM", plot_abs=False, display_mode="ortho",)
-            show()
+                beta_maps_all = nilearn.image.mean_img([beta_maps1, beta_maps2, beta_maps3, beta_maps4])
+                output_path = results_folder + subID + "/" + f"{task}_lss_beta_sd_map_{subID}_15_10_25.nii.gz"
+                nib.save(beta_maps_all, output_path)
 
-            output_path = results_folder + subID + "/" + f"lss_beta_sd_map_{subID}.nii.gz"
-            nib.save(beta_sd_maps, output_path)
+                ROI_maps_schaefer = var.apply_ROI_masks_new(beta_maps_all, atlas=atlas, region_names=regions_schaefer)
+                ROI_maps_sub = var.apply_ROI_masks_new(beta_maps_all, atlas=atlas_sub, region_names=regions_sub)
+                all_ROI_maps = {**ROI_maps_schaefer, **ROI_maps_sub}
 
-            ROI_maps_schaefer = var.apply_ROI_masks_new(beta_sd_maps, atlas=atlas, region_names=regions_schaefer)
-            ROI_maps_sub = var.apply_ROI_masks_new(beta_sd_maps, atlas=atlas_sub, region_names=regions_sub)
-            all_ROI_maps = {**ROI_maps_schaefer, **ROI_maps_sub}
+                all_ROI_maps_df = pd.DataFrame.from_dict(all_ROI_maps, orient='index').T
 
-            all_ROI_maps_df = pd.DataFrame.from_dict(all_ROI_maps, orient='index').T
+                all_ROI_maps_df.to_csv(results_folder + subID + "/" + f"{task}_lss_ROI_variability_{subID}_15_10_25.csv")
 
-            all_ROI_maps_df.to_csv(results_folder + subID + "/" + f"lss_ROI_variability_{subID}.csv")
+            elif task == "WM":
+                fmri_img, events, confounds = var.load_data(folder, subID, task)
+                betas, beta_maps = var.get_beta_maps_lss(task, fmri_img, events, confounds)
+
+                beta_maps_all = nilearn.image.mean_img(beta_maps)
+                output_path = results_folder + subID + "/" + f"{task}_lss_beta_sd_map_{subID}_15_10_25.nii.gz"
+                nib.save(beta_maps_all, output_path)
+
+                ROI_maps_schaefer = var.apply_ROI_masks_new(beta_maps_all, atlas=atlas, region_names=regions_schaefer)
+                ROI_maps_sub = var.apply_ROI_masks_new(beta_maps_all, atlas=atlas_sub, region_names=regions_sub)
+                all_ROI_maps = {**ROI_maps_schaefer, **ROI_maps_sub}
+
+                all_ROI_maps_df = pd.DataFrame.from_dict(all_ROI_maps, orient='index').T
+
+                all_ROI_maps_df.to_csv(results_folder + subID + "/" + f"{task}_lss_ROI_variability_{subID}_15_10_25.csv")
 
 
-            return subID, beta_sd_maps, all_ROI_maps
+            return subID, beta_maps_all, all_ROI_maps
         
     except FileNotFoundError as e:
         print(f"⚠️ Skipping {subID}: {e}")
@@ -301,5 +380,5 @@ def process_subject(subID, folder, results_folder, atlas, atlas_sub, regions_sch
     
 
 results = Parallel(n_jobs=8)(delayed(process_subject)(
-    subID, folder_PREACT, results_folder_PREACT, atlas, atlas_sub, regions_schaefer, regions_sub
+    subID, folder_PREACT, "REG", results_folder_PREACT, atlas, atlas_sub, regions_schaefer, regions_sub
 ) for subID in subIDs)
