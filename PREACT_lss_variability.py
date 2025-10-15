@@ -124,6 +124,21 @@ class lss_variability_analysis:
         return fmri_img, events, motion_confounds
     
     def get_beta_maps_lss(self, task, fmri_img, events, confounds):
+        """
+        Calculate beta maps for each trial using the Least Squares - Single (LSS) method.
+        This models each trial separately while collapsing all other trials into a single regressor.
+        
+        Parameters:
+        fmri_img (nib.Nifti1Image): The preprocessed fMRI data.
+        events (pd.DataFrame): DataFrame containing event information with columns ['onset', 'duration', 'trial_type'].
+        confounds (pd.DataFrame): DataFrame containing confound regressors (e.g., motion parameters).
+        
+        Returns:
+        beta_maps (list of nib.Nifti1Image): List of beta maps for each trial.
+        beta_sd_map (nib.Nifti1Image): Voxelwise standard deviation map across all beta maps.
+        
+        """
+                
         t_r = 0.72
         n_scans = fmri_img.shape[-1]
         frame_times = np.arange(n_scans) * t_r
