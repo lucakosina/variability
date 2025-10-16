@@ -163,7 +163,8 @@ class lss_variability_analysis:
                     first_level_model = FirstLevelModel(
                         t_r=t_r,
                         slice_time_ref=0.5,
-                        hrf_model="spm",
+                        #hrf_model="spm",
+                        hrf_model="spm + derivative + dispersion",
                         drift_model="cosine",
                         high_pass=0.01
                     )
@@ -196,7 +197,7 @@ class lss_variability_analysis:
                     first_level_model = FirstLevelModel(
                         t_r=t_r,
                         slice_time_ref=0.5,
-                        hrf_model="spm",
+                        hrf_model="spm + derivative + dispersion",
                         drift_model="cosine",
                         high_pass=0.01
                     )
@@ -309,9 +310,9 @@ class lss_variability_analysis:
 ### Main script
 
 
-folder_PREACT = "/Users/lucakosina/Library/Mobile Documents/com~apple~CloudDocs/Uni/MASTER/lab rotations/ritter lab/PREACT/task/"  
+folder_PREACT = "../PREACT/task/"  
 
-results_folder_PREACT = "/Users/lucakosina/Library/Mobile Documents/com~apple~CloudDocs/Uni/MASTER/lab rotations/ritter lab/PREACT_results/"
+results_folder_PREACT = "../PREACT_results/"
 
 subIDs = ["14080"]
 
@@ -338,7 +339,7 @@ def process_subject(subID, folder, task, results_folder, atlas, atlas_sub, regio
 
         # check if folder already contains file then skip
         folder_path = os.path.expanduser(results_folder + subID + "/")
-        file_name = f"{task}_lss_ROI_variability_{subID}_15_10_25.csv"
+        file_name = f"{task}_lss_ROI_variability_{subID}_wDerivatives_15_10_25.csv"
         file_path = os.path.join(folder_path, file_name)
 
         if os.path.exists(file_path):
@@ -359,32 +360,32 @@ def process_subject(subID, folder, task, results_folder, atlas, atlas_sub, regio
                 betas4, beta_maps4 = var.get_beta_maps_lss(task, fmri_img4, events4, confounds4)
 
                 beta_maps_all = nilearn.image.mean_img([beta_maps1, beta_maps2, beta_maps3, beta_maps4])
-                output_path = results_folder + subID + "/" + f"{task}_lss_beta_sd_map_{subID}_15_10_25.nii.gz"
+                output_path = results_folder + subID + "/" + f"{task}_lss_beta_sd_map_{subID}_wDerivatives_15_10_25.nii.gz"
                 nib.save(beta_maps_all, output_path)
 
-                ROI_maps_schaefer = var.apply_ROI_masks_new(beta_maps_all, atlas=atlas, region_names=regions_schaefer)
-                ROI_maps_sub = var.apply_ROI_masks_new(beta_maps_all, atlas=atlas_sub, region_names=regions_sub)
+                ROI_maps_schaefer = var.apply_ROI_masks(beta_maps_all, atlas=atlas, region_names=regions_schaefer)
+                ROI_maps_sub = var.apply_ROI_masks(beta_maps_all, atlas=atlas_sub, region_names=regions_sub)
                 all_ROI_maps = {**ROI_maps_schaefer, **ROI_maps_sub}
 
                 all_ROI_maps_df = pd.DataFrame.from_dict(all_ROI_maps, orient='index').T
 
-                all_ROI_maps_df.to_csv(results_folder + subID + "/" + f"{task}_lss_ROI_variability_{subID}_15_10_25.csv")
+                all_ROI_maps_df.to_csv(results_folder + subID + "/" + f"{task}_lss_ROI_variability_{subID}_wDerivatives_15_10_25.csv")
 
             elif task == "WM":
                 fmri_img, events, confounds = var.load_data(folder, subID, task)
                 betas, beta_maps = var.get_beta_maps_lss(task, fmri_img, events, confounds)
 
                 beta_maps_all = nilearn.image.mean_img(beta_maps)
-                output_path = results_folder + subID + "/" + f"{task}_lss_beta_sd_map_{subID}_15_10_25.nii.gz"
+                output_path = results_folder + subID + "/" + f"{task}_lss_beta_sd_map_{subID}_wDerivatives_15_10_25.nii.gz"
                 nib.save(beta_maps_all, output_path)
 
-                ROI_maps_schaefer = var.apply_ROI_masks_new(beta_maps_all, atlas=atlas, region_names=regions_schaefer)
-                ROI_maps_sub = var.apply_ROI_masks_new(beta_maps_all, atlas=atlas_sub, region_names=regions_sub)
+                ROI_maps_schaefer = var.apply_ROI_masks(beta_maps_all, atlas=atlas, region_names=regions_schaefer)
+                ROI_maps_sub = var.apply_ROI_masks(beta_maps_all, atlas=atlas_sub, region_names=regions_sub)
                 all_ROI_maps = {**ROI_maps_schaefer, **ROI_maps_sub}
 
                 all_ROI_maps_df = pd.DataFrame.from_dict(all_ROI_maps, orient='index').T
 
-                all_ROI_maps_df.to_csv(results_folder + subID + "/" + f"{task}_lss_ROI_variability_{subID}_15_10_25.csv")
+                all_ROI_maps_df.to_csv(results_folder + subID + "/" + f"{task}_lss_ROI_variability_{subID}_wDerivatives_15_10_25.csv")
 
 
             return subID, beta_maps_all, all_ROI_maps
@@ -395,5 +396,5 @@ def process_subject(subID, folder, task, results_folder, atlas, atlas_sub, regio
     
 
 results = Parallel(n_jobs=8)(delayed(process_subject)(
-    subID, folder_PREACT, "REG", results_folder_PREACT, atlas, atlas_sub, regions_schaefer, regions_sub
+    subID, folder_PREACT, "WM", results_folder_PREACT, atlas, atlas_sub, regions_schaefer, regions_sub
 ) for subID in subIDs)
